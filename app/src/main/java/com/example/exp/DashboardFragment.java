@@ -21,9 +21,7 @@ public class DashboardFragment extends Fragment {
     private RecyclerView recyclerView;
     private DatabaseHelper dbHelper;
     private String userName;
-
     public DashboardFragment() { }
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -34,7 +32,6 @@ public class DashboardFragment extends Fragment {
             userName = activity.loggedInUserName;
         }
     }
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -47,7 +44,6 @@ public class DashboardFragment extends Fragment {
         updateDashboard();
         return view;
     }
-
     private void updateDashboard() {
         String currentMonth = new SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(new Date());
 

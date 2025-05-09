@@ -1,4 +1,5 @@
 package com.example.exp;
+
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -9,18 +10,30 @@ import java.util.List;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "ExpenseApp.db";
-    private static final int DATABASE_VERSION = 2;
+    private static final int DATABASE_VERSION = 3;
+
     private static final String TABLE_USER = "user";
     private static final String COLUMN_ID = "id";
     private static final String COLUMN_NAME = "name";
     private static final String COLUMN_EMAIL = "email";
     private static final String COLUMN_PASSWORD = "password";
-    private static final String TABLE_CREATE =
+
+    private static final String TABLE_CREATE_USER =
             "CREATE TABLE " + TABLE_USER + " (" +
                     COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                     COLUMN_NAME + " TEXT NOT NULL, " +
                     COLUMN_EMAIL + " TEXT NOT NULL, " +
-                    COLUMN_PASSWORD + " TEXT NOT NULL);";
+                    COLUMN_PASSWORD + " TEXT NOT NULL, " +
+                    "image BLOB);";
+
+    private static final String TABLE_EXPENSES_CREATE =
+            "CREATE TABLE expenses (" +
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                    "name TEXT NOT NULL, " +
+                    "amount REAL NOT NULL, " +
+                    "date TEXT NOT NULL, " +
+                    "image BLOB, " +
+                    "username TEXT NOT NULL);";
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -28,22 +41,46 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        db.execSQL(TABLE_CREATE);            // Creates the user table
-        db.execSQL(TABLE_EXPENSES_CREATE);   // Creates the expenses table
+        db.execSQL(TABLE_CREATE_USER);
+        db.execSQL(TABLE_EXPENSES_CREATE);
     }
+
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_USER);
+        db.execSQL("DROP TABLE IF EXISTS expenses");
         onCreate(db);
     }
-    public long addUser(String name, String email, String password) {
+
+    public long addUser(String name, String email, String password, byte[] image) {
         SQLiteDatabase db = getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(COLUMN_NAME, name);
         values.put(COLUMN_EMAIL, email);
         values.put(COLUMN_PASSWORD, password);
+        values.put("image", image);
         return db.insert(TABLE_USER, null, values);
     }
+
+    public boolean updateUserImage(String username, byte[] newImage) {
+        SQLiteDatabase db = getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put("image", newImage);
+        int result = db.update(TABLE_USER, values, COLUMN_NAME + "=?", new String[]{username});
+        return result > 0;
+    }
+
+    public byte[] getUserImageByUsername(String username) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT image FROM user WHERE name = ?", new String[]{username});
+        byte[] image = null;
+        if (cursor.moveToFirst()) {
+            image = cursor.getBlob(0);
+        }
+        cursor.close();
+        return image;
+    }
+
     public String getNameByEmail(String email) {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery("SELECT name FROM user WHERE email = ?", new String[]{email});
@@ -55,14 +92,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         cursor.close();
         return null;
     }
-    private static final String TABLE_EXPENSES_CREATE =
-            "CREATE TABLE expenses (" +
-                    "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                    "name TEXT NOT NULL, " +
-                    "amount REAL NOT NULL, " +
-                    "date TEXT NOT NULL, " +
-                    "image BLOB, " +
-                    "username TEXT NOT NULL);";
 
     public boolean insertExpense(String name, double amount, String date, byte[] image, String username) {
         SQLiteDatabase db = this.getWritableDatabase();
@@ -75,6 +104,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         long result = db.insert("expenses", null, values);
         return result != -1;
     }
+
     public List<Expense> getAllExpenses(String username) {
         List<Expense> expenses = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
@@ -96,7 +126,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return expenses;
     }
 
-
     public boolean checkUser(String email, String password) {
         SQLiteDatabase db = getReadableDatabase();
         Cursor cursor = db.query(TABLE_USER,
@@ -107,7 +136,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         cursor.close();
         return exists;
     }
-    // Get total expenditure for current month
+
     public double getMonthlyTotal(String username, String currentMonth) {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery(
@@ -122,7 +151,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return total;
     }
 
-    // Get total per date in current month
     public List<DailyTotal> getDailyTotals(String username, String currentMonth) {
         List<DailyTotal> results = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
@@ -144,6 +172,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         cursor.close();
         return results;
     }
+
     public boolean updatePassword(String email, String newPassword) {
         SQLiteDatabase db = getWritableDatabase();
         ContentValues values = new ContentValues();
