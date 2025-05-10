@@ -36,6 +36,9 @@ public class LoginActivity extends AppCompatActivity {
                 }
             }
         });
+        findViewById(R.id.forgotPassword1).setOnClickListener(v -> {
+            startActivity(new Intent(this, ForgotPasswordActivity.class));
+        });
 
         findViewById(R.id.toRegisterButton).setOnClickListener(v -> {
             startActivity(new Intent(this, RegisterActivity.class));
